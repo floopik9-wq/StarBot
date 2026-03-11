@@ -1,0 +1,1580 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>BotCraft — Complete Bot Building Guide</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Mono:wght@300;400;500&family=Instrument+Serif:ital@0;1&display=swap" rel="stylesheet">
+<style>
+/* ═══════════════════════════════════════
+   ROOT & RESET
+═══════════════════════════════════════ */
+:root {
+  --bg: #0b0d0b;
+  --bg2: #111311;
+  --bg3: #161916;
+  --surface: #1b1f1b;
+  --surface2: #222622;
+  --green: #4ade80;
+  --green2: #22c55e;
+  --green-glow: rgba(74,222,128,0.13);
+  --green-faint: rgba(74,222,128,0.06);
+  --white: #eef3ee;
+  --white-dim: #bfcebf;
+  --muted: #607060;
+  --border: rgba(74,222,128,0.13);
+  --border2: rgba(238,243,238,0.055);
+  --purple: #a78bfa;
+  --yellow: #fbbf24;
+  --blue: #60a5fa;
+  --red: #f87171;
+}
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html { scroll-behavior: smooth; }
+body {
+  background: var(--bg);
+  color: var(--white);
+  font-family: 'DM Mono', monospace;
+  overflow-x: hidden;
+  cursor: none;
+}
+
+/* ═══════════════════════════════════════
+   NOISE TEXTURE
+═══════════════════════════════════════ */
+body::before {
+  content: '';
+  position: fixed; inset: 0;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 512 512' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.035'/%3E%3C/svg%3E");
+  pointer-events: none; z-index: 0; opacity: 0.7;
+}
+
+/* ═══════════════════════════════════════
+   CUSTOM CURSOR
+═══════════════════════════════════════ */
+.cursor {
+  width: 9px; height: 9px;
+  background: var(--green);
+  border-radius: 50%;
+  position: fixed; pointer-events: none;
+  z-index: 9999; mix-blend-mode: screen;
+  transition: transform 0.1s;
+}
+.cursor-ring {
+  width: 34px; height: 34px;
+  border: 1px solid rgba(74,222,128,0.45);
+  border-radius: 50%;
+  position: fixed; pointer-events: none;
+  z-index: 9998;
+}
+
+/* ═══════════════════════════════════════
+   FIXED NAV
+═══════════════════════════════════════ */
+nav {
+  position: fixed; top: 0; left: 0; right: 0;
+  z-index: 500;
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 0 48px;
+  height: 64px;
+  background: rgba(11,13,11,0.88);
+  backdrop-filter: blur(24px);
+  border-bottom: 1px solid var(--border2);
+}
+.nav-logo {
+  font-family: 'Syne', sans-serif;
+  font-weight: 800; font-size: 1.35rem;
+  color: var(--white); text-decoration: none;
+  letter-spacing: -0.03em;
+}
+.nav-logo span { color: var(--green); }
+.nav-pills {
+  display: flex; gap: 4px;
+  background: var(--surface);
+  border: 1px solid var(--border2);
+  border-radius: 100px;
+  padding: 4px;
+}
+.nav-pill {
+  padding: 6px 18px;
+  border-radius: 100px;
+  font-size: 0.72rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--muted);
+  text-decoration: none;
+  transition: background 0.2s, color 0.2s;
+  cursor: pointer;
+  border: none; background: transparent;
+  font-family: 'DM Mono', monospace;
+}
+.nav-pill:hover, .nav-pill.active {
+  background: var(--green);
+  color: #000;
+}
+.nav-status {
+  display: flex; align-items: center; gap: 8px;
+  font-size: 0.7rem; color: var(--muted);
+}
+.status-dot {
+  width: 7px; height: 7px;
+  border-radius: 50%;
+  background: var(--green);
+  box-shadow: 0 0 8px var(--green);
+  animation: pulse-dot 2s infinite;
+}
+@keyframes pulse-dot {
+  0%,100%{opacity:1;} 50%{opacity:0.4;}
+}
+
+/* ═══════════════════════════════════════
+   HERO
+═══════════════════════════════════════ */
+#home {
+  min-height: 100vh;
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  text-align: center;
+  padding: 100px 48px 80px;
+  position: relative; overflow: hidden;
+}
+.hero-grid-bg {
+  position: absolute; inset: 0;
+  background-image:
+    linear-gradient(rgba(74,222,128,0.035) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(74,222,128,0.035) 1px, transparent 1px);
+  background-size: 56px 56px;
+  mask-image: radial-gradient(ellipse 80% 70% at 50% 50%, black 30%, transparent 100%);
+}
+.hero-orb {
+  position: absolute;
+  width: 700px; height: 700px;
+  background: radial-gradient(circle, rgba(74,222,128,0.075) 0%, transparent 65%);
+  top: 50%; left: 50%;
+  transform: translate(-50%, -60%);
+  pointer-events: none;
+  animation: orb-breathe 6s ease-in-out infinite;
+}
+@keyframes orb-breathe {
+  0%,100%{transform:translate(-50%,-60%) scale(1);}
+  50%{transform:translate(-50%,-60%) scale(1.08);}
+}
+.hero-eyebrow {
+  display: inline-flex; align-items: center; gap: 10px;
+  background: rgba(74,222,128,0.08);
+  border: 1px solid rgba(74,222,128,0.2);
+  border-radius: 100px;
+  padding: 6px 18px;
+  font-size: 0.68rem;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--green);
+  margin-bottom: 36px;
+  position: relative; z-index: 1;
+  opacity: 0; animation: fadeUp 0.8s 0.1s forwards;
+}
+.eyebrow-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--green); animation: pulse-dot 2s infinite; }
+.hero-title {
+  font-family: 'Syne', sans-serif;
+  font-weight: 800;
+  font-size: clamp(3.8rem, 9vw, 8rem);
+  line-height: 0.9;
+  letter-spacing: -0.045em;
+  margin-bottom: 32px;
+  position: relative; z-index: 1;
+  opacity: 0; animation: fadeUp 0.9s 0.25s forwards;
+}
+.hero-title .line2 {
+  display: block;
+  color: var(--green);
+  font-family: 'Instrument Serif', serif;
+  font-style: italic;
+  font-weight: 400;
+}
+.hero-sub {
+  max-width: 560px; margin: 0 auto 52px;
+  color: var(--muted);
+  font-size: 0.88rem; line-height: 1.85;
+  position: relative; z-index: 1;
+  opacity: 0; animation: fadeUp 0.9s 0.4s forwards;
+}
+.hero-cta {
+  display: flex; gap: 12px; justify-content: center; flex-wrap: wrap;
+  position: relative; z-index: 1;
+  opacity: 0; animation: fadeUp 0.9s 0.55s forwards;
+}
+.btn-p {
+  background: var(--green); color: #000;
+  font-family: 'DM Mono', monospace;
+  font-size: 0.8rem; font-weight: 500;
+  padding: 13px 28px; border-radius: 7px;
+  text-decoration: none; letter-spacing: 0.04em;
+  transition: transform 0.2s, box-shadow 0.2s;
+  border: none; cursor: pointer;
+}
+.btn-p:hover { transform: translateY(-2px); box-shadow: 0 14px 40px rgba(74,222,128,0.28); }
+.btn-g {
+  background: transparent; color: var(--white-dim);
+  font-family: 'DM Mono', monospace;
+  font-size: 0.8rem;
+  padding: 13px 28px; border-radius: 7px;
+  border: 1px solid var(--border2);
+  text-decoration: none; letter-spacing: 0.04em;
+  transition: border-color 0.2s, color 0.2s;
+  cursor: pointer;
+}
+.btn-g:hover { border-color: var(--green); color: var(--green); }
+
+/* Scroll arrow */
+.scroll-arrow {
+  position: absolute; bottom: 36px; left: 50%;
+  transform: translateX(-50%);
+  display: flex; flex-direction: column; align-items: center; gap: 6px;
+  color: var(--muted); font-size: 0.6rem; letter-spacing: 0.18em; text-transform: uppercase;
+  opacity: 0; animation: fadeUp 1s 1.1s forwards;
+  z-index: 1;
+}
+.arrow-line { width: 1px; height: 44px; background: linear-gradient(to bottom, var(--green), transparent); animation: pulse-arr 2.2s infinite; }
+@keyframes pulse-arr { 0%,100%{opacity:1;} 50%{opacity:0.2;} }
+
+/* ═══════════════════════════════════════
+   SECTION SHELL
+═══════════════════════════════════════ */
+.section {
+  padding: 100px 48px;
+  position: relative; z-index: 1;
+}
+.section-alt { background: var(--bg2); border-top: 1px solid var(--border2); border-bottom: 1px solid var(--border2); }
+.section-label {
+  display: flex; align-items: center; gap: 10px;
+  font-size: 0.62rem; letter-spacing: 0.2em; text-transform: uppercase;
+  color: var(--green); margin-bottom: 14px;
+}
+.section-label::before { content: ''; display: block; width: 22px; height: 1px; background: var(--green); }
+.section-h {
+  font-family: 'Syne', sans-serif; font-weight: 800;
+  font-size: clamp(2.2rem, 4vw, 3.5rem);
+  letter-spacing: -0.04em; line-height: 1;
+  margin-bottom: 14px;
+}
+.section-sub { color: var(--muted); font-size: 0.85rem; line-height: 1.85; max-width: 480px; margin-bottom: 56px; }
+
+/* ═══════════════════════════════════════
+   STATS STRIP
+═══════════════════════════════════════ */
+.stats-strip {
+  display: grid; grid-template-columns: repeat(4,1fr);
+  border: 1px solid var(--border);
+  border-radius: 14px; overflow: hidden;
+  margin-bottom: 0;
+}
+.stat {
+  padding: 32px 28px;
+  border-right: 1px solid var(--border);
+}
+.stat:last-child { border-right: none; }
+.stat-n {
+  font-family: 'Syne', sans-serif; font-weight: 800;
+  font-size: 2.6rem; letter-spacing: -0.04em;
+  color: var(--green); line-height: 1; margin-bottom: 6px;
+}
+.stat-l { color: var(--muted); font-size: 0.72rem; letter-spacing: 0.05em; }
+
+/* ═══════════════════════════════════════
+   BOT DIRECTORY GRID
+═══════════════════════════════════════ */
+.bots-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+}
+
+/* BIG card (span 2) */
+.bot-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 18px;
+  padding: 36px;
+  text-decoration: none; color: inherit;
+  display: flex; flex-direction: column;
+  cursor: pointer;
+  position: relative; overflow: hidden;
+  transition: transform 0.32s cubic-bezier(0.34,1.56,0.64,1), box-shadow 0.3s, border-color 0.25s;
+}
+.bot-card::after {
+  content: '';
+  position: absolute; inset: 0;
+  background: var(--green-faint);
+  opacity: 0; transition: opacity 0.25s;
+  pointer-events: none;
+}
+.bot-card:hover {
+  transform: translateY(-7px);
+  box-shadow: 0 28px 70px rgba(0,0,0,0.5), 0 0 0 1px rgba(74,222,128,0.22);
+  border-color: rgba(74,222,128,0.3);
+}
+.bot-card:hover::after { opacity: 1; }
+.bot-card.featured { grid-column: span 2; flex-direction: row; gap: 36px; align-items: center; }
+.bot-card.tall { min-height: 300px; }
+
+.card-ghost-num {
+  position: absolute; top: 20px; right: 24px;
+  font-family: 'Syne', sans-serif; font-weight: 800;
+  font-size: 5rem; line-height: 1;
+  color: rgba(74,222,128,0.05);
+  pointer-events: none; letter-spacing: -0.04em;
+}
+
+.card-icon-box {
+  width: 54px; height: 54px; min-width: 54px;
+  background: var(--green-glow);
+  border: 1px solid rgba(74,222,128,0.22);
+  border-radius: 13px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 1.5rem;
+  margin-bottom: 22px;
+  transition: transform 0.25s, box-shadow 0.25s;
+  position: relative; z-index: 1;
+}
+.bot-card:hover .card-icon-box { transform: scale(1.08); box-shadow: 0 0 20px rgba(74,222,128,0.2); }
+.bot-card.featured .card-icon-box { margin-bottom: 0; }
+
+.card-body { flex: 1; position: relative; z-index: 1; }
+.card-tag {
+  font-size: 0.6rem; letter-spacing: 0.16em; text-transform: uppercase;
+  color: var(--green); margin-bottom: 8px;
+}
+.card-title {
+  font-family: 'Syne', sans-serif; font-weight: 700;
+  font-size: 1.15rem; letter-spacing: -0.02em;
+  margin-bottom: 10px; line-height: 1.2;
+}
+.bot-card.featured .card-title { font-size: 1.55rem; }
+.card-desc { color: var(--muted); font-size: 0.78rem; line-height: 1.75; margin-bottom: 22px; }
+.card-meta { display: flex; gap: 16px; flex-wrap: wrap; margin-bottom: 22px; }
+.meta-chip {
+  background: var(--bg2);
+  border: 1px solid var(--border2);
+  border-radius: 6px; padding: 4px 10px;
+  font-size: 0.66rem; color: var(--white-dim);
+}
+.meta-chip strong { color: var(--green); }
+.card-bottom { display: flex; align-items: center; justify-content: space-between; margin-top: auto; position: relative; z-index: 1; }
+.card-dots { display: flex; gap: 4px; }
+.dot { width: 6px; height: 6px; border-radius: 50%; background: rgba(74,222,128,0.2); }
+.dot.on { background: var(--green); }
+.card-arrow { color: var(--green); font-size: 1.15rem; transition: transform 0.2s; }
+.bot-card:hover .card-arrow { transform: translate(4px,-4px); }
+
+/* ═══════════════════════════════════════
+   PROCESS FLOW
+═══════════════════════════════════════ */
+.flow-wrap {
+  display: flex; align-items: flex-start;
+  gap: 0; position: relative; margin-top: 56px;
+}
+.flow-wrap::before {
+  content: '';
+  position: absolute; top: 27px; left: 27px; right: 27px; height: 1px;
+  background: linear-gradient(to right, var(--green), rgba(74,222,128,0.1));
+}
+.flow-node {
+  flex: 1; display: flex; flex-direction: column; align-items: center;
+  text-align: center; padding: 0 12px; position: relative; z-index: 1;
+}
+.flow-ring {
+  width: 54px; height: 54px; border-radius: 50%;
+  background: var(--surface);
+  border: 2px solid var(--green);
+  display: flex; align-items: center; justify-content: center;
+  font-family: 'Syne', sans-serif; font-weight: 800; font-size: 1rem;
+  color: var(--green); margin-bottom: 18px;
+  box-shadow: 0 0 20px rgba(74,222,128,0.18);
+  transition: box-shadow 0.3s, transform 0.3s;
+}
+.flow-node:hover .flow-ring { box-shadow: 0 0 40px rgba(74,222,128,0.4); transform: scale(1.1); }
+.flow-title { font-family: 'Syne',sans-serif; font-weight: 700; font-size: 0.88rem; margin-bottom: 6px; }
+.flow-desc { color: var(--muted); font-size: 0.72rem; line-height: 1.6; }
+
+/* ═══════════════════════════════════════
+   DEEP-DIVE SECTIONS (embedded guides)
+═══════════════════════════════════════ */
+.guide-panel {
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  overflow: hidden;
+  margin-bottom: 24px;
+}
+.guide-panel-header {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 28px 36px;
+  border-bottom: 1px solid var(--border2);
+  cursor: pointer;
+  transition: background 0.2s;
+  user-select: none;
+}
+.guide-panel-header:hover { background: var(--green-faint); }
+.guide-panel-header-left { display: flex; align-items: center; gap: 18px; }
+.guide-panel-icon { font-size: 1.6rem; }
+.guide-panel-info {}
+.guide-panel-name {
+  font-family: 'Syne', sans-serif; font-weight: 700; font-size: 1.1rem;
+  letter-spacing: -0.02em; margin-bottom: 3px;
+}
+.guide-panel-sub { color: var(--muted); font-size: 0.75rem; }
+.guide-panel-header-right { display: flex; align-items: center; gap: 16px; }
+.panel-badge {
+  background: rgba(74,222,128,0.1); border: 1px solid rgba(74,222,128,0.2);
+  color: var(--green); font-size: 0.62rem; padding: 4px 12px; border-radius: 100px;
+  letter-spacing: 0.08em; text-transform: uppercase;
+}
+.panel-chevron {
+  color: var(--green); font-size: 1rem;
+  transition: transform 0.3s;
+}
+.guide-panel.open .panel-chevron { transform: rotate(180deg); }
+
+.guide-panel-body {
+  display: none;
+  padding: 0 36px 36px;
+}
+.guide-panel.open .guide-panel-body { display: block; }
+.guide-panel-body-inner {
+  display: grid; grid-template-columns: 1fr 280px; gap: 48px;
+  padding-top: 32px;
+}
+
+/* Steps inside guide panels */
+.step-row {
+  display: flex; gap: 20px; margin-bottom: 20px;
+  padding: 20px 22px; background: var(--surface);
+  border: 1px solid var(--border2); border-radius: 11px;
+  position: relative; overflow: hidden;
+  transition: border-color 0.2s;
+}
+.step-row::before { content:''; position:absolute; left:0;top:0;bottom:0; width:3px; background:var(--green); }
+.step-row:hover { border-color: rgba(74,222,128,0.25); }
+.step-circle {
+  width: 36px; height: 36px; min-width: 36px; border-radius: 50%;
+  background: var(--green-glow); border: 1px solid rgba(74,222,128,0.25);
+  display: flex; align-items: center; justify-content: center;
+  font-family: 'Syne',sans-serif; font-weight: 800; font-size: 0.85rem; color: var(--green);
+}
+.step-info h4 { font-family:'Syne',sans-serif; font-weight:700; font-size:0.92rem; margin-bottom:5px; }
+.step-info p { color:var(--muted); font-size:0.76rem; line-height:1.65; }
+
+/* Terminal */
+.term {
+  background: var(--bg); border: 1px solid var(--border);
+  border-radius: 11px; overflow: hidden; margin: 20px 0;
+}
+.term-bar {
+  background: var(--surface); padding: 9px 16px;
+  display: flex; align-items: center; gap: 7px;
+  border-bottom: 1px solid var(--border2);
+}
+.td { width: 9px; height: 9px; border-radius: 50%; }
+.td.r { background:#ff5f57; } .td.y { background:#febc2e; } .td.g { background:#28c840; }
+.term-lbl { color:var(--muted); font-size:0.66rem; letter-spacing:0.1em; margin-left:6px; }
+.term-body { padding:20px 22px; font-size:0.75rem; line-height:2; overflow-x:auto; }
+.tc { color:var(--muted); } .tk { color:var(--purple); } .ts { color:var(--yellow); }
+.tf { color:var(--green); } .tv { color:var(--blue); }
+.tcur { display:inline-block; width:7px; height:0.85em; background:var(--green); vertical-align:middle; animation:blink 1s steps(1) infinite; }
+
+/* Alerts */
+.alert {
+  padding:18px 20px; border-radius:9px; border-left:3px solid;
+  margin:18px 0; font-size:0.76rem; line-height:1.7;
+}
+.al-i { background:rgba(96,165,250,0.08); border-color:var(--blue); color:var(--blue); }
+.al-w { background:rgba(251,191,36,0.08); border-color:var(--yellow); color:var(--yellow); }
+.al-s { background:var(--green-glow); border-color:var(--green); color:var(--green); }
+.alert strong { display:block; margin-bottom:4px; font-size:0.66rem; letter-spacing:0.1em; text-transform:uppercase; }
+
+/* Sidebar inside panel */
+.panel-sidebar {}
+.sidebar-block {
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: 11px; padding: 20px 22px; margin-bottom: 14px;
+}
+.sb-title { font-family:'Syne',sans-serif; font-weight:700; font-size:0.8rem; color:var(--green); margin-bottom:13px; }
+.sb-link {
+  display:flex; align-items:center; gap:7px;
+  padding:7px 0; border-bottom:1px solid var(--border2);
+  text-decoration:none; color:var(--white-dim); font-size:0.72rem;
+  transition:color 0.2s;
+}
+.sb-link:last-child { border-bottom:none; }
+.sb-link:hover { color:var(--green); }
+.sb-link::before { content:'→'; color:var(--green); font-size:0.6rem; }
+
+.checklist { list-style:none; margin:14px 0; }
+.checklist li {
+  display:flex; align-items:flex-start; gap:10px;
+  padding:9px 0; border-bottom:1px solid var(--border2);
+  font-size:0.76rem; color:var(--white-dim); line-height:1.5;
+}
+.checklist li:last-child { border-bottom:none; }
+.ci { color:var(--green); font-size:0.65rem; margin-top:2px; flex-shrink:0; }
+
+/* guide section headings inside panel */
+.gs-num { font-size:0.6rem; letter-spacing:0.2em; text-transform:uppercase; color:var(--green); margin-bottom:6px; }
+.gs-title { font-family:'Syne',sans-serif; font-weight:700; font-size:1.4rem; letter-spacing:-0.03em; margin-bottom:14px; }
+.gp { color:var(--white-dim); font-size:0.82rem; line-height:1.9; margin-bottom:14px; }
+.gsec { margin-bottom:48px; }
+
+/* file tree */
+.file-tree {
+  background:var(--bg); border:1px solid var(--border);
+  border-radius:9px; padding:18px 20px;
+  font-size:0.74rem; line-height:2.1; margin:16px 0;
+}
+.ft-folder { color:var(--yellow); }
+.ft-py { color:var(--blue); }
+.ft-env { color:var(--green); }
+.ft-file { color:var(--white-dim); }
+.ft-note { color:var(--muted); }
+.ind { margin-left:18px; }
+.ind2 { margin-left:36px; }
+
+/* Highlight box */
+.hl-box {
+  background:linear-gradient(135deg,var(--green-glow),transparent);
+  border:1px solid rgba(74,222,128,0.18);
+  border-radius:14px; padding:28px 32px; margin:24px 0;
+}
+.hl-box h3 { font-family:'Syne',sans-serif; font-weight:700; font-size:1.05rem; margin-bottom:10px; }
+.hl-box p { color:var(--white-dim); font-size:0.79rem; line-height:1.8; }
+
+/* ═══════════════════════════════════════
+   TOOLS COMPARISON TABLE
+═══════════════════════════════════════ */
+.tools-table {
+  width: 100%; border-collapse: collapse;
+  font-size: 0.78rem; margin-top: 32px;
+  border: 1px solid var(--border);
+  border-radius: 12px; overflow: hidden;
+}
+.tools-table thead { background: var(--surface); }
+.tools-table th {
+  padding: 16px 20px; text-align: left;
+  font-family: 'Syne',sans-serif; font-weight:700; font-size:0.8rem;
+  letter-spacing:-0.01em; border-bottom:1px solid var(--border);
+  color:var(--white-dim);
+}
+.tools-table th:first-child { color:var(--green); }
+.tools-table td { padding:14px 20px; border-bottom:1px solid var(--border2); color:var(--white-dim); vertical-align:middle; }
+.tools-table tr:last-child td { border-bottom:none; }
+.tools-table tr:hover td { background:var(--green-faint); }
+.t-yes { color:var(--green); } .t-no { color:var(--muted); } .t-mid { color:var(--yellow); }
+.diff-badge {
+  display:inline-block; padding:3px 10px; border-radius:100px; font-size:0.64rem;
+  letter-spacing:0.06em; text-transform:uppercase;
+}
+.diff-easy { background:rgba(74,222,128,0.12); color:var(--green); border:1px solid rgba(74,222,128,0.2); }
+.diff-med { background:rgba(251,191,36,0.1); color:var(--yellow); border:1px solid rgba(251,191,36,0.2); }
+.diff-hard { background:rgba(248,113,113,0.1); color:var(--red); border:1px solid rgba(248,113,113,0.2); }
+
+/* ═══════════════════════════════════════
+   FOOTER
+═══════════════════════════════════════ */
+footer {
+  padding: 48px; border-top: 1px solid var(--border2);
+  position:relative; z-index:1;
+}
+.footer-inner {
+  display:flex; align-items:center; justify-content:space-between;
+  flex-wrap:wrap; gap:24px;
+}
+.footer-logo { font-family:'Syne',sans-serif; font-weight:800; font-size:1.2rem; letter-spacing:-0.03em; }
+.footer-logo span { color:var(--green); }
+.footer-links { display:flex; gap:24px; }
+.footer-links a { color:var(--muted); text-decoration:none; font-size:0.7rem; letter-spacing:0.08em; text-transform:uppercase; transition:color 0.2s; }
+.footer-links a:hover { color:var(--green); }
+.footer-copy { color:var(--muted); font-size:0.7rem; }
+
+/* ═══════════════════════════════════════
+   ANIMATIONS & UTILITIES
+═══════════════════════════════════════ */
+@keyframes fadeUp { from{opacity:0;transform:translateY(22px);} to{opacity:1;transform:translateY(0);} }
+@keyframes blink { 0%,100%{opacity:1;} 50%{opacity:0;} }
+@keyframes float { 0%,100%{transform:translateY(0);} 50%{transform:translateY(-8px);} }
+.reveal { opacity:0; transform:translateY(28px); transition:opacity 0.65s ease, transform 0.65s ease; }
+.reveal.visible { opacity:1; transform:translateY(0); }
+.reveal-delay-1 { transition-delay: 0.08s; }
+.reveal-delay-2 { transition-delay: 0.16s; }
+.reveal-delay-3 { transition-delay: 0.24s; }
+
+code { color:var(--green); background:rgba(74,222,128,0.08); padding:2px 6px; border-radius:4px; font-size:0.9em; }
+strong { color:var(--white); }
+
+</style>
+</head>
+<body>
+
+<!-- Cursor -->
+<div class="cursor" id="cursor"></div>
+<div class="cursor-ring" id="cursorRing"></div>
+
+<!-- ═══════════ NAV ═══════════ -->
+<nav>
+  <a href="#home" class="nav-logo">Bot<span>Craft</span></a>
+  <div class="nav-pills">
+    <button class="nav-pill active" onclick="scrollTo('#home')">Home</button>
+    <button class="nav-pill" onclick="scrollTo('#bots')">Bots</button>
+    <button class="nav-pill" onclick="scrollTo('#guides')">Guides</button>
+    <button class="nav-pill" onclick="scrollTo('#tools')">Compare</button>
+    <button class="nav-pill" onclick="scrollTo('#process')">Process</button>
+  </div>
+  <div class="nav-status">
+    <div class="status-dot"></div>
+    <span>6 guides live</span>
+  </div>
+</nav>
+
+<!-- ═══════════ HERO ═══════════ -->
+<section id="home">
+  <div class="hero-grid-bg"></div>
+  <div class="hero-orb"></div>
+
+  <div class="hero-eyebrow"><div class="eyebrow-dot"></div>Complete bot development platform</div>
+  <h1 class="hero-title">
+    Build bots<br>
+    <span class="line2">that actually work</span>
+  </h1>
+  <p class="hero-sub">
+    Everything in one place — Discord bots, Telegram AI bots, web scrapers, AI agents, social automation, and embeddable chatbots. Deep guides, real code, zero fluff.
+  </p>
+  <div class="hero-cta">
+    <button class="btn-p" onclick="scrollTo('#bots')">Explore All Bots ↓</button>
+    <button class="btn-g" onclick="scrollTo('#guides')">Read Deep Guides</button>
+  </div>
+
+  <div class="scroll-arrow">
+    <span>scroll</span>
+    <div class="arrow-line"></div>
+  </div>
+</section>
+
+<!-- ═══════════ STATS ═══════════ -->
+<section class="section" style="padding-top:0; padding-bottom:64px;">
+  <div class="stats-strip reveal">
+    <div class="stat"><div class="stat-n">6</div><div class="stat-l">Bot types covered</div></div>
+    <div class="stat"><div class="stat-n">100%</div><div class="stat-l">Working code included</div></div>
+    <div class="stat"><div class="stat-n">3</div><div class="stat-l">Deployment platforms</div></div>
+    <div class="stat"><div class="stat-n">∞</div><div class="stat-l">Things you can automate</div></div>
+  </div>
+</section>
+
+<!-- ═══════════ BOT DIRECTORY ═══════════ -->
+<section class="section section-alt" id="bots">
+  <div class="section-label">Bot Directory</div>
+  <h2 class="section-h">Pick your bot type</h2>
+  <p class="section-sub">Every bot below links to a full deep-dive guide inside this page. Click a card to jump straight to its tutorial.</p>
+
+  <div class="bots-grid">
+
+    <!-- FEATURED: Discord -->
+    <a class="bot-card featured reveal" href="#guide-discord">
+      <div class="card-icon-box" style="font-size:2rem;">🤖</div>
+      <div class="card-body">
+        <div class="card-ghost-num">01</div>
+        <div class="card-tag">★ Most Popular</div>
+        <div class="card-title">Discord Bot from Scratch</div>
+        <div class="card-desc">Build a fully functional Discord bot with slash commands, event listeners, rich embeds, and 24/7 cloud deployment. Powered by Python + discord.py.</div>
+        <div class="card-meta">
+          <span class="meta-chip"><strong>Level:</strong> Beginner</span>
+          <span class="meta-chip"><strong>Time:</strong> ~2 hrs</span>
+          <span class="meta-chip"><strong>Stack:</strong> Python</span>
+        </div>
+        <div class="card-bottom">
+          <div class="card-dots"><div class="dot on"></div><div class="dot on"></div><div class="dot on"></div><div class="dot on"></div><div class="dot on"></div></div>
+          <div class="card-arrow">↗</div>
+        </div>
+      </div>
+    </a>
+
+    <!-- Telegram -->
+    <a class="bot-card tall reveal reveal-delay-1" href="#guide-telegram">
+      <div class="card-ghost-num">02</div>
+      <div class="card-icon-box">✈️</div>
+      <div class="card-tag">AI-Powered</div>
+      <div class="card-title">Telegram Bot + AI</div>
+      <div class="card-desc">Connect GPT-4o, add inline keyboards, webhooks, and persistent conversation history.</div>
+      <div class="card-meta">
+        <span class="meta-chip"><strong>Level:</strong> Intermediate</span>
+        <span class="meta-chip"><strong>Time:</strong> ~3 hrs</span>
+      </div>
+      <div class="card-bottom">
+        <div class="card-dots"><div class="dot on"></div><div class="dot on"></div><div class="dot on"></div><div class="dot on"></div><div class="dot"></div></div>
+        <div class="card-arrow">↗</div>
+      </div>
+    </a>
+
+    <!-- Web Scraper -->
+    <a class="bot-card reveal" href="#guide-scraper">
+      <div class="card-ghost-num">03</div>
+      <div class="card-icon-box">🕷️</div>
+      <div class="card-tag">Automation</div>
+      <div class="card-title">Web Scraper Bot</div>
+      <div class="card-desc">Scrape any site with Playwright + BeautifulSoup. Schedule runs, export CSV.</div>
+      <div class="card-meta">
+        <span class="meta-chip"><strong>Level:</strong> Beginner</span>
+        <span class="meta-chip"><strong>Time:</strong> ~2 hrs</span>
+      </div>
+      <div class="card-bottom">
+        <div class="card-dots"><div class="dot on"></div><div class="dot on"></div><div class="dot on"></div><div class="dot"></div><div class="dot"></div></div>
+        <div class="card-arrow">↗</div>
+      </div>
+    </a>
+
+    <!-- AI Agent -->
+    <a class="bot-card reveal reveal-delay-1" href="#guide-agent">
+      <div class="card-ghost-num">04</div>
+      <div class="card-icon-box">🧠</div>
+      <div class="card-tag">Advanced</div>
+      <div class="card-title">AI Agent with Tools</div>
+      <div class="card-desc">Build a LangChain agent that searches the web, runs code, and answers complex questions autonomously.</div>
+      <div class="card-meta">
+        <span class="meta-chip"><strong>Level:</strong> Advanced</span>
+        <span class="meta-chip"><strong>Time:</strong> ~4 hrs</span>
+      </div>
+      <div class="card-bottom">
+        <div class="card-dots"><div class="dot on"></div><div class="dot on"></div><div class="dot on"></div><div class="dot on"></div><div class="dot on"></div></div>
+        <div class="card-arrow">↗</div>
+      </div>
+    </a>
+
+    <!-- Twitter -->
+    <a class="bot-card reveal reveal-delay-2" href="#guide-twitter">
+      <div class="card-ghost-num">05</div>
+      <div class="card-icon-box">𝕏</div>
+      <div class="card-tag">Social</div>
+      <div class="card-title">Twitter/X Auto Bot</div>
+      <div class="card-desc">Schedule tweets, auto-reply to mentions, monitor keywords via Tweepy + cron.</div>
+      <div class="card-meta">
+        <span class="meta-chip"><strong>Level:</strong> Beginner</span>
+        <span class="meta-chip"><strong>Time:</strong> ~1.5 hrs</span>
+      </div>
+      <div class="card-bottom">
+        <div class="card-dots"><div class="dot on"></div><div class="dot on"></div><div class="dot on"></div><div class="dot"></div><div class="dot"></div></div>
+        <div class="card-arrow">↗</div>
+      </div>
+    </a>
+
+    <!-- Chatbot -->
+    <a class="bot-card reveal reveal-delay-3" href="#guide-chatbot">
+      <div class="card-ghost-num">06</div>
+      <div class="card-icon-box">💬</div>
+      <div class="card-tag">Web App</div>
+      <div class="card-title">Embeddable Chatbot Widget</div>
+      <div class="card-desc">A floating chat widget for any website. AI backend + one-line embed script.</div>
+      <div class="card-meta">
+        <span class="meta-chip"><strong>Level:</strong> Intermediate</span>
+        <span class="meta-chip"><strong>Time:</strong> ~2.5 hrs</span>
+      </div>
+      <div class="card-bottom">
+        <div class="card-dots"><div class="dot on"></div><div class="dot on"></div><div class="dot on"></div><div class="dot on"></div><div class="dot"></div></div>
+        <div class="card-arrow">↗</div>
+      </div>
+    </a>
+
+  </div>
+</section>
+
+<!-- ═══════════ PROCESS ═══════════ -->
+<section class="section" id="process">
+  <div class="section-label">Universal Pattern</div>
+  <h2 class="section-h">How every bot is built</h2>
+  <p class="section-sub">Regardless of platform, every bot follows this 6-step pattern. Master this once, build anything.</p>
+
+  <div class="flow-wrap reveal">
+    <div class="flow-node"><div class="flow-ring">1</div><div class="flow-title">Register API</div><div class="flow-desc">Create a bot account on the platform and get your secret token</div></div>
+    <div class="flow-node"><div class="flow-ring">2</div><div class="flow-title">Install SDK</div><div class="flow-desc">Install the official Python library and set up your environment</div></div>
+    <div class="flow-node"><div class="flow-ring">3</div><div class="flow-title">Handle Events</div><div class="flow-desc">Write handlers for messages, commands, or webhooks</div></div>
+    <div class="flow-node"><div class="flow-ring">4</div><div class="flow-title">Add Logic</div><div class="flow-desc">Implement your core features, integrations and AI</div></div>
+    <div class="flow-node"><div class="flow-ring">5</div><div class="flow-title">Test Locally</div><div class="flow-desc">Run and debug all edge cases before going live</div></div>
+    <div class="flow-node"><div class="flow-ring">6</div><div class="flow-title">Deploy 24/7</div><div class="flow-desc">Push to Railway, Render, or a VPS to keep it running forever</div></div>
+  </div>
+</section>
+
+<!-- ═══════════ DEEP GUIDES ═══════════ -->
+<section class="section section-alt" id="guides">
+  <div class="section-label">Full Tutorials</div>
+  <h2 class="section-h">Complete step-by-step guides</h2>
+  <p class="section-sub">Click any guide to expand the full tutorial — code, steps, deployment, and all. No redirects, everything is here.</p>
+
+  <!-- ━━━ GUIDE 1: DISCORD ━━━ -->
+  <div class="guide-panel reveal" id="guide-discord">
+    <div class="guide-panel-header" onclick="togglePanel(this)">
+      <div class="guide-panel-header-left">
+        <div class="guide-panel-icon">🤖</div>
+        <div class="guide-panel-info">
+          <div class="guide-panel-name">Discord Bot from Scratch</div>
+          <div class="guide-panel-sub">Python · discord.py · Railway · Beginner · ~2 hrs</div>
+        </div>
+      </div>
+      <div class="guide-panel-header-right">
+        <span class="panel-badge">★ Most Popular</span>
+        <span class="panel-chevron">▾</span>
+      </div>
+    </div>
+    <div class="guide-panel-body">
+      <div class="guide-panel-body-inner">
+        <div>
+          <!-- S1 -->
+          <div class="gsec">
+            <div class="gs-num">// 01 — Prerequisites</div>
+            <h3 class="gs-title">What you need first</h3>
+            <ul class="checklist">
+              <li><span class="ci">✓</span>Python 3.10+ — check with <code>python --version</code></li>
+              <li><span class="ci">✓</span>A Discord account and a server you own or admin</li>
+              <li><span class="ci">✓</span>VS Code (recommended) or any code editor</li>
+              <li><span class="ci">✓</span>A GitHub account for deployment</li>
+            </ul>
+          </div>
+
+          <!-- S2 -->
+          <div class="gsec">
+            <div class="gs-num">// 02 — Developer Portal</div>
+            <h3 class="gs-title">Register your bot application</h3>
+            <div class="step-row"><div class="step-circle">1</div><div class="step-info"><h4>Open discord.com/developers/applications</h4><p>Log in with your Discord account. Click <strong>New Application</strong> in the top right corner.</p></div></div>
+            <div class="step-row"><div class="step-circle">2</div><div class="step-info"><h4>Add a Bot user</h4><p>In the left sidebar click <strong>Bot → Add Bot → Confirm</strong>. This creates the actual bot account.</p></div></div>
+            <div class="step-row"><div class="step-circle">3</div><div class="step-info"><h4>Copy your token</h4><p>Click <strong>Reset Token</strong>, copy the result. This is your bot's password — never share it or commit it to Git.</p></div></div>
+            <div class="step-row"><div class="step-circle">4</div><div class="step-info"><h4>Enable Message Content Intent</h4><p>Scroll down in the Bot section → under <strong>Privileged Gateway Intents</strong>, enable <strong>Message Content Intent</strong>.</p></div></div>
+            <div class="step-row"><div class="step-circle">5</div><div class="step-info"><h4>Invite bot to your server</h4><p>Go to <strong>OAuth2 → URL Generator</strong>. Check <code>bot</code> and <code>applications.commands</code>. Under Bot Permissions check <strong>Administrator</strong>. Open the generated URL to invite.</p></div></div>
+          </div>
+
+          <!-- S3 -->
+          <div class="gsec">
+            <div class="gs-num">// 03 — Project Setup</div>
+            <h3 class="gs-title">File structure and install</h3>
+            <div class="file-tree">
+              <div><span class="ft-folder">📁 my-discord-bot/</span></div>
+              <div class="ind"><span class="ft-py">📄 bot.py</span> &nbsp;<span class="ft-note">← entry point</span></div>
+              <div class="ind"><span class="ft-env">📄 .env</span> &nbsp;&nbsp;<span class="ft-note">← secret token (never commit!)</span></div>
+              <div class="ind"><span class="ft-file">📄 requirements.txt</span></div>
+              <div class="ind"><span class="ft-folder">📁 cogs/</span> &nbsp;<span class="ft-note">← command modules</span></div>
+              <div class="ind2"><span class="ft-py">📄 general.py</span></div>
+              <div class="ind2"><span class="ft-py">📄 moderation.py</span></div>
+              <div class="ind"><span class="ft-file">📄 .gitignore</span> &nbsp;<span class="ft-note">← add .env here</span></div>
+            </div>
+            <div class="term">
+              <div class="term-bar"><div class="td r"></div><div class="td y"></div><div class="td g"></div><span class="term-lbl">bash — install</span></div>
+              <div class="term-body">
+                <div><span class="tc"># Create virtual env and install</span></div>
+                <div><span class="tf">python -m venv venv</span></div>
+                <div><span class="tf">source venv/bin/activate</span> &nbsp;<span class="tc"># Windows: venv\Scripts\activate</span></div>
+                <div><span class="tf">pip install "discord.py[voice]" python-dotenv</span></div>
+                <div><span class="tf">pip freeze &gt; requirements.txt</span></div>
+              </div>
+            </div>
+          </div>
+
+          <!-- S4 -->
+          <div class="gsec">
+            <div class="gs-num">// 04 — Write the Bot</div>
+            <h3 class="gs-title">Complete bot.py with events and commands</h3>
+            <div class="term">
+              <div class="term-bar"><div class="td r"></div><div class="td y"></div><div class="td g"></div><span class="term-lbl">bot.py</span></div>
+              <div class="term-body">
+                <div><span class="tk">import</span> <span class="tv">discord</span></div>
+                <div><span class="tk">from</span> <span class="tv">discord.ext</span> <span class="tk">import</span> <span class="tv">commands</span></div>
+                <div><span class="tk">from</span> <span class="tv">dotenv</span> <span class="tk">import</span> <span class="tv">load_dotenv</span></div>
+                <div><span class="tk">import</span> <span class="tv">os</span></div>
+                <div>&nbsp;</div>
+                <div><span class="tf">load_dotenv</span>()</div>
+                <div><span class="tv">intents</span> = <span class="tv">discord</span>.<span class="tf">Intents</span>.<span class="tf">default</span>()</div>
+                <div><span class="tv">intents</span>.<span class="tv">message_content</span> = <span class="tk">True</span></div>
+                <div><span class="tv">intents</span>.<span class="tv">members</span> = <span class="tk">True</span></div>
+                <div>&nbsp;</div>
+                <div><span class="tv">bot</span> = <span class="tv">commands</span>.<span class="tf">Bot</span>(command_prefix=<span class="ts">"!"</span>, intents=<span class="tv">intents</span>)</div>
+                <div>&nbsp;</div>
+                <div><span class="tc"># Fires when the bot is connected</span></div>
+                <div><span class="tk">@</span><span class="tv">bot</span>.<span class="tf">event</span></div>
+                <div><span class="tk">async def</span> <span class="tf">on_ready</span>():</div>
+                <div>&nbsp;&nbsp;&nbsp;&nbsp;<span class="tf">print</span>(<span class="ts">f"✅ {bot.user} is online in {len(bot.guilds)} servers"</span>)</div>
+                <div>&nbsp;&nbsp;&nbsp;&nbsp;<span class="tk">await</span> <span class="tv">bot</span>.<span class="tf">change_presence</span>(activity=<span class="tv">discord</span>.<span class="tf">Game</span>(<span class="ts">"!help"</span>))</div>
+                <div>&nbsp;</div>
+                <div><span class="tc"># !ping command</span></div>
+                <div><span class="tk">@</span><span class="tv">bot</span>.<span class="tf">command</span>()</div>
+                <div><span class="tk">async def</span> <span class="tf">ping</span>(<span class="tv">ctx</span>):</div>
+                <div>&nbsp;&nbsp;&nbsp;&nbsp;<span class="tk">await</span> <span class="tv">ctx</span>.<span class="tf">reply</span>(<span class="ts">f"🏓 Pong! {round(bot.latency*1000)}ms"</span>)</div>
+                <div>&nbsp;</div>
+                <div><span class="tc"># Welcome new members</span></div>
+                <div><span class="tk">@</span><span class="tv">bot</span>.<span class="tf">event</span></div>
+                <div><span class="tk">async def</span> <span class="tf">on_member_join</span>(<span class="tv">member</span>):</div>
+                <div>&nbsp;&nbsp;&nbsp;&nbsp;<span class="tv">ch</span> = <span class="tv">member</span>.<span class="tv">guild</span>.<span class="tv">system_channel</span></div>
+                <div>&nbsp;&nbsp;&nbsp;&nbsp;<span class="tk">if</span> <span class="tv">ch</span>: <span class="tk">await</span> <span class="tv">ch</span>.<span class="tf">send</span>(<span class="ts">f"👋 Welcome {member.mention}!"</span>)</div>
+                <div>&nbsp;</div>
+                <div><span class="tv">bot</span>.<span class="tf">run</span>(<span class="tv">os</span>.<span class="tf">getenv</span>(<span class="ts">"DISCORD_TOKEN"</span>)) <span class="tcur"></span></div>
+              </div>
+            </div>
+            <div class="alert al-s"><strong>✅ Test Now</strong>Run <code>python bot.py</code>. See "✅ YourBot is online"? Type <code>!ping</code> in your server to confirm it responds.</div>
+          </div>
+
+          <!-- S5 -->
+          <div class="gsec">
+            <div class="gs-num">// 05 — Slash Commands</div>
+            <h3 class="gs-title">Modern slash commands with app_commands</h3>
+            <div class="term">
+              <div class="term-bar"><div class="td r"></div><div class="td y"></div><div class="td g"></div><span class="term-lbl">cogs/general.py</span></div>
+              <div class="term-body">
+                <div><span class="tk">import</span> <span class="tv">discord</span></div>
+                <div><span class="tk">from</span> <span class="tv">discord</span> <span class="tk">import</span> <span class="tv">app_commands</span></div>
+                <div><span class="tk">from</span> <span class="tv">discord.ext</span> <span class="tk">import</span> <span class="tv">commands</span></div>
+                <div>&nbsp;</div>
+                <div><span class="tk">class</span> <span class="tf">General</span>(<span class="tv">commands</span>.<span class="tv">Cog</span>):</div>
+                <div>&nbsp;&nbsp;&nbsp;&nbsp;<span class="tk">def</span> <span class="tf">__init__</span>(<span class="tv">self</span>, <span class="tv">bot</span>): <span class="tv">self</span>.<span class="tv">bot</span> = <span class="tv">bot</span></div>
+                <div>&nbsp;</div>
+                <div>&nbsp;&nbsp;&nbsp;&nbsp;<span class="tk">@</span><span class="tv">app_commands</span>.<span class="tf">command</span>(name=<span class="ts">"hello"</span>, description=<span class="ts">"Get a greeting"</span>)</div>
+                <div>&nbsp;&nbsp;&nbsp;&nbsp;<span class="tk">async def</span> <span class="tf">hello</span>(<span class="tv">self</span>, <span class="tv">interaction</span>: <span class="tv">discord</span>.<span class="tv">Interaction</span>):</div>
+                <div>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="tv">embed</span> = <span class="tv">discord</span>.<span class="tf">Embed</span>(title=<span class="ts">"👋 Hey!"</span>, color=<span class="tv">discord</span>.<span class="tv">Color</span>.<span class="tf">green</span>())</div>
+                <div>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="tk">await</span> <span class="tv">interaction</span>.<span class="tv">response</span>.<span class="tf">send_message</span>(embed=<span class="tv">embed</span>)</div>
+                <div>&nbsp;</div>
+                <div><span class="tk">async def</span> <span class="tf">setup</span>(<span class="tv">bot</span>): <span class="tk">await</span> <span class="tv">bot</span>.<span class="tf">add_cog</span>(<span class="tf">General</span>(<span class="tv">bot</span>))</div>
+              </div>
+            </div>
+            <div class="hl-box"><h3>🔄 Sync your commands</h3><p>Add <code>await bot.tree.sync()</code> inside <code>on_ready</code>. For instant dev testing, sync to a specific guild: <code>await bot.tree.sync(guild=discord.Object(id=GUILD_ID))</code> — guild-synced commands appear instantly. Global sync can take up to an hour.</p></div>
+          </div>
+
+          <!-- S6 Deploy -->
+          <div class="gsec">
+            <div class="gs-num">// 06 — Deploy</div>
+            <h3 class="gs-title">Go live on Railway (free)</h3>
+            <div class="step-row"><div class="step-circle">1</div><div class="step-info"><h4>Push to GitHub</h4><p>Create a repo, push your files. Ensure <code>.env</code> is in <code>.gitignore</code> — never push your token.</p></div></div>
+            <div class="step-row"><div class="step-circle">2</div><div class="step-info"><h4>New project on Railway.app</h4><p>Sign in with GitHub → <strong>New Project → Deploy from GitHub Repo</strong> → select your bot.</p></div></div>
+            <div class="step-row"><div class="step-circle">3</div><div class="step-info"><h4>Add environment variables</h4><p>In Railway → your service → <strong>Variables</strong>: add <code>DISCORD_TOKEN</code> manually. Never via the UI from your <code>.env</code> file.</p></div></div>
+            <div class="step-row"><div class="step-circle">4</div><div class="step-info"><h4>Watch the logs</h4><p>Railway auto-detects Python and starts your bot. Check <strong>Logs</strong> for your "online" message. Every git push triggers an auto-redeploy.</p></div></div>
+          </div>
+        </div>
+
+        <!-- Sidebar -->
+        <div>
+          <div class="sidebar-block">
+            <div class="sb-title">// What to build next</div>
+            <ul class="checklist" style="margin:0">
+              <li><span class="ci">→</span>Music bot with yt-dlp + FFmpeg</li>
+              <li><span class="ci">→</span>Economy system with SQLite</li>
+              <li><span class="ci">→</span>AI replies via OpenAI API</li>
+              <li><span class="ci">→</span>Reaction roles system</li>
+              <li><span class="ci">→</span>Moderation with auto-ban</li>
+              <li><span class="ci">→</span>Scheduled daily messages</li>
+            </ul>
+          </div>
+          <div class="sidebar-block">
+            <div class="sb-title">// Useful Links</div>
+            <a href="https://discordpy.readthedocs.io" class="sb-link" target="_blank">discord.py docs</a>
+            <a href="https://discord.com/developers" class="sb-link" target="_blank">Developer Portal</a>
+            <a href="https://railway.app" class="sb-link" target="_blank">Railway (deploy)</a>
+            <a href="https://top.gg" class="sb-link" target="_blank">top.gg — list your bot</a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ━━━ GUIDE 2: TELEGRAM ━━━ -->
+  <div class="guide-panel reveal" id="guide-telegram">
+    <div class="guide-panel-header" onclick="togglePanel(this)">
+      <div class="guide-panel-header-left">
+        <div class="guide-panel-icon">✈️</div>
+        <div class="guide-panel-info">
+          <div class="guide-panel-name">Telegram Bot with AI Replies</div>
+          <div class="guide-panel-sub">Python · python-telegram-bot · OpenAI GPT-4o · Intermediate · ~3 hrs</div>
+        </div>
+      </div>
+      <div class="guide-panel-header-right">
+        <span class="panel-badge">AI-Powered</span>
+        <span class="panel-chevron">▾</span>
+      </div>
+    </div>
+    <div class="guide-panel-body">
+      <div class="guide-panel-body-inner">
+        <div>
+          <div class="gsec">
+            <div class="gs-num">// 01 — BotFather</div>
+            <h3 class="gs-title">Create your bot via BotFather</h3>
+            <div class="step-row"><div class="step-circle">1</div><div class="step-info"><h4>Open Telegram → search @BotFather</h4><p>Start a chat. Type <code>/newbot</code> and follow the prompts. Your bot username must end in "bot".</p></div></div>
+            <div class="step-row"><div class="step-circle">2</div><div class="step-info"><h4>Save your HTTP API token</h4><p>BotFather returns a token like <code>1234567890:AAEhB...</code>. Copy it — this is your bot's secret key.</p></div></div>
+            <div class="step-row"><div class="step-circle">3</div><div class="step-info"><h4>Get an OpenAI key</h4><p>Sign up at <code>platform.openai.com</code> → API keys → Create new secret key. GPT-4o costs ~$0.005 per typical message.</p></div></div>
+          </div>
+
+          <div class="gsec">
+            <div class="gs-num">// 02 — Install</div>
+            <h3 class="gs-title">Setup and configuration</h3>
+            <div class="term">
+              <div class="term-bar"><div class="td r"></div><div class="td y"></div><div class="td g"></div><span class="term-lbl">bash</span></div>
+              <div class="term-body">
+                <div><span class="tf">pip install python-telegram-bot openai python-dotenv</span></div>
+                <div>&nbsp;</div>
+                <div><span class="tc"># .env</span></div>
+                <div><span class="tv">TELEGRAM_TOKEN</span>=<span class="ts">paste_botfather_token_here</span></div>
+                <div><span class="tv">OPENAI_API_KEY</span>=<span class="ts">sk-your-openai-key</span></div>
+              </div>
+            </div>
+          </div>
+
+          <div class="gsec">
+            <div class="gs-num">// 03 — Core Bot</div>
+            <h3 class="gs-title">Bot + GPT-4o integration</h3>
+            <div class="term">
+              <div class="term-bar"><div class="td r"></div><div class="td y"></div><div class="td g"></div><span class="term-lbl">bot.py</span></div>
+              <div class="term-body">
+                <div><span class="tk">from</span> <span class="tv">telegram.ext</span> <span class="tk">import</span> <span class="tv">ApplicationBuilder, CommandHandler, MessageHandler, filters, ContextTypes</span></div>
+                <div><span class="tk">from</span> <span class="tv">openai</span> <span class="tk">import</span> <span class="tv">AsyncOpenAI</span></div>
+                <div><span class="tk">from</span> <span class="tv">telegram</span> <span class="tk">import</span> <span class="tv">Update</span></div>
+                <div><span class="tk">import</span> <span class="tv">os</span></div>
+                <div>&nbsp;</div>
+                <div><span class="tv">client</span> = <span class="tf">AsyncOpenAI</span>(api_key=<span class="tv">os</span>.<span class="tf">getenv</span>(<span class="ts">"OPENAI_API_KEY"</span>))</div>
+                <div><span class="tv">history</span> = {}  <span class="tc"># per-user conversation memory</span></div>
+                <div>&nbsp;</div>
+                <div><span class="tk">async def</span> <span class="tf">reply</span>(<span class="tv">update</span>: <span class="tv">Update</span>, <span class="tv">ctx</span>: <span class="tv">ContextTypes.DEFAULT_TYPE</span>):</div>
+                <div>&nbsp;&nbsp;&nbsp;&nbsp;<span class="tv">uid</span> = <span class="tv">update</span>.<span class="tv">effective_user</span>.<span class="tv">id</span></div>
+                <div>&nbsp;&nbsp;&nbsp;&nbsp;<span class="tk">if</span> <span class="tv">uid</span> <span class="tk">not in</span> <span class="tv">history</span>:</div>
+                <div>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="tv">history</span>[<span class="tv">uid</span>] = [{<span class="ts">"role"</span>:<span class="ts">"system"</span>,<span class="ts">"content"</span>:<span class="ts">"You are a helpful Telegram bot."</span>}]</div>
+                <div>&nbsp;&nbsp;&nbsp;&nbsp;<span class="tv">history</span>[<span class="tv">uid</span>].<span class="tf">append</span>({<span class="ts">"role"</span>:<span class="ts">"user"</span>,<span class="ts">"content"</span>:<span class="tv">update</span>.<span class="tv">message</span>.<span class="tv">text</span>})</div>
+                <div>&nbsp;&nbsp;&nbsp;&nbsp;<span class="tv">res</span> = <span class="tk">await</span> <span class="tv">client</span>.<span class="tv">chat</span>.<span class="tv">completions</span>.<span class="tf">create</span>(model=<span class="ts">"gpt-4o"</span>, messages=<span class="tv">history</span>[<span class="tv">uid</span>], max_tokens=<span class="tv">500</span>)</div>
+                <div>&nbsp;&nbsp;&nbsp;&nbsp;<span class="tv">text</span> = <span class="tv">res</span>.<span class="tv">choices</span>[<span class="tv">0</span>].<span class="tv">message</span>.<span class="tv">content</span></div>
+                <div>&nbsp;&nbsp;&nbsp;&nbsp;<span class="tv">history</span>[<span class="tv">uid</span>].<span class="tf">append</span>({<span class="ts">"role"</span>:<span class="ts">"assistant"</span>,<span class="ts">"content"</span>:<span class="tv">text</span>})</div>
+                <div>&nbsp;&nbsp;&nbsp;&nbsp;<span class="tk">await</span> <span class="tv">update</span>.<span class="tv">message</span>.<span class="tf">reply_text</span>(<span class="tv">text</span>)</div>
+                <div>&nbsp;</div>
+                <div><span class="tv">app</span> = <span class="tv">ApplicationBuilder</span>().<span class="tf">token</span>(<span class="tv">os</span>.<span class="tf">getenv</span>(<span class="ts">"TELEGRAM_TOKEN"</span>)).<span class="tf">build</span>()</div>
+                <div><span class="tv">app</span>.<span class="tf">add_handler</span>(<span class="tf">MessageHandler</span>(<span class="tv">filters</span>.<span class="tv">TEXT</span>, <span class="tv">reply</span>))</div>
+                <div><span class="tv">app</span>.<span class="tf">run_polling</span>() <span class="tcur"></span></div>
+              </div>
+            </div>
+            <div class="alert al-s"><strong>✅ It has memory!</strong>The <code>history</code> dict stores each user's full conversation so GPT-4o remembers context across multiple messages — just like ChatGPT. Cap at last 20 messages to control costs.</div>
+          </div>
+
+          <div class="gsec">
+            <div class="gs-num">// 04 — Inline Keyboards</div>
+            <h3 class="gs-title">Add clickable button menus</h3>
+            <div class="term">
+              <div class="term-bar"><div class="td r"></div><div class="td y"></div><div class="td g"></div><span class="term-lbl">buttons.py</span></div>
+              <div class="term-body">
+                <div><span class="tk">from</span> <span class="tv">telegram</span> <span class="tk">import</span> <span class="tv">InlineKeyboardButton, InlineKeyboardMarkup</span></div>
+                <div>&nbsp;</div>
+                <div><span class="tk">async def</span> <span class="tf">menu</span>(<span class="tv">update</span>, <span class="tv">ctx</span>):</div>
+                <div>&nbsp;&nbsp;&nbsp;&nbsp;<span class="tv">kb</span> = [[</div>
+                <div>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="tf">InlineKeyboardButton</span>(<span class="ts">"🧠 Ask AI"</span>, callback_data=<span class="ts">"ask"</span>),</div>
+                <div>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="tf">InlineKeyboardButton</span>(<span class="ts">"🗑 Clear"</span>, callback_data=<span class="ts">"clear"</span>)</div>
+                <div>&nbsp;&nbsp;&nbsp;&nbsp;]]</div>
+                <div>&nbsp;&nbsp;&nbsp;&nbsp;<span class="tk">await</span> <span class="tv">update</span>.<span class="tv">message</span>.<span class="tf">reply_text</span>(<span class="ts">"Choose:"</span>, reply_markup=<span class="tf">InlineKeyboardMarkup</span>(<span class="tv">kb</span>))</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Sidebar -->
+        <div>
+          <div class="sidebar-block">
+            <div class="sb-title">// Key concepts</div>
+            <ul class="checklist" style="margin:0">
+              <li><span class="ci">→</span>Long-polling vs webhooks</li>
+              <li><span class="ci">→</span>Message handlers vs command handlers</li>
+              <li><span class="ci">→</span>Conversation state management</li>
+              <li><span class="ci">→</span>Rate limits (30 msg/sec globally)</li>
+              <li><span class="ci">→</span>Inline vs reply keyboards</li>
+            </ul>
+          </div>
+          <div class="sidebar-block">
+            <div class="sb-title">// Resources</div>
+            <a href="https://python-telegram-bot.readthedocs.io" class="sb-link" target="_blank">PTB Documentation</a>
+            <a href="https://core.telegram.org/bots/api" class="sb-link" target="_blank">Telegram Bot API</a>
+            <a href="https://platform.openai.com" class="sb-link" target="_blank">OpenAI Platform</a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ━━━ GUIDE 3: SCRAPER ━━━ -->
+  <div class="guide-panel reveal" id="guide-scraper">
+    <div class="guide-panel-header" onclick="togglePanel(this)">
+      <div class="guide-panel-header-left">
+        <div class="guide-panel-icon">🕷️</div>
+        <div class="guide-panel-info">
+          <div class="guide-panel-name">Web Scraper Bot</div>
+          <div class="guide-panel-sub">Python · Playwright · BeautifulSoup · Schedule · Beginner · ~2 hrs</div>
+        </div>
+      </div>
+      <div class="guide-panel-header-right">
+        <span class="panel-badge">Automation</span>
+        <span class="panel-chevron">▾</span>
+      </div>
+    </div>
+    <div class="guide-panel-body">
+      <div class="guide-panel-body-inner">
+        <div>
+          <div class="gsec">
+            <div class="gs-num">// 01 — Install</div>
+            <h3 class="gs-title">Set up Playwright and BeautifulSoup</h3>
+            <div class="term">
+              <div class="term-bar"><div class="td r"></div><div class="td y"></div><div class="td g"></div><span class="term-lbl">bash</span></div>
+              <div class="term-body">
+                <div><span class="tf">pip install playwright beautifulsoup4 pandas schedule</span></div>
+                <div><span class="tf">playwright install chromium</span> &nbsp;<span class="tc"># downloads headless browser</span></div>
+              </div>
+            </div>
+          </div>
+          <div class="gsec">
+            <div class="gs-num">// 02 — Basic Scraper</div>
+            <h3 class="gs-title">Scrape any page, extract data</h3>
+            <div class="term">
+              <div class="term-bar"><div class="td r"></div><div class="td y"></div><div class="td g"></div><span class="term-lbl">scraper.py</span></div>
+              <div class="term-body">
+                <div><span class="tk">from</span> <span class="tv">playwright.async_api</span> <span class="tk">import</span> <span class="tv">async_playwright</span></div>
+                <div><span class="tk">from</span> <span class="tv">bs4</span> <span class="tk">import</span> <span class="tv">BeautifulSoup</span></div>
+                <div><span class="tk">import</span> <span class="tv">pandas</span> <span class="tk">as</span> <span class="tv">pd</span>, <span class="tv">asyncio</span></div>
+                <div>&nbsp;</div>
+                <div><span class="tk">async def</span> <span class="tf">scrape</span>(<span class="tv">url</span>: <span class="tv">str</span>) -> <span class="tv">list</span>:</div>
+                <div>&nbsp;&nbsp;&nbsp;&nbsp;<span class="tk">async with</span> <span class="tf">async_playwright</span>() <span class="tk">as</span> <span class="tv">p</span>:</div>
+                <div>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="tv">browser</span> = <span class="tk">await</span> <span class="tv">p</span>.<span class="tv">chromium</span>.<span class="tf">launch</span>()</div>
+                <div>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="tv">page</span> = <span class="tk">await</span> <span class="tv">browser</span>.<span class="tf">new_page</span>()</div>
+                <div>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="tk">await</span> <span class="tv">page</span>.<span class="tf">goto</span>(<span class="tv">url</span>)</div>
+                <div>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="tc"># Wait for JS to render (key for SPAs)</span></div>
+                <div>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="tk">await</span> <span class="tv">page</span>.<span class="tf">wait_for_load_state</span>(<span class="ts">"networkidle"</span>)</div>
+                <div>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="tv">html</span> = <span class="tk">await</span> <span class="tv">page</span>.<span class="tf">content</span>()</div>
+                <div>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="tk">await</span> <span class="tv">browser</span>.<span class="tf">close</span>()</div>
+                <div>&nbsp;</div>
+                <div>&nbsp;&nbsp;&nbsp;&nbsp;<span class="tv">soup</span> = <span class="tf">BeautifulSoup</span>(<span class="tv">html</span>, <span class="ts">"html.parser"</span>)</div>
+                <div>&nbsp;&nbsp;&nbsp;&nbsp;<span class="tv">items</span> = []</div>
+                <div>&nbsp;&nbsp;&nbsp;&nbsp;<span class="tk">for</span> <span class="tv">card</span> <span class="tk">in</span> <span class="tv">soup</span>.<span class="tf">select</span>(<span class="ts">".product-card"</span>):  <span class="tc"># change selector</span></div>
+                <div>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="tv">items</span>.<span class="tf">append</span>({</div>
+                <div>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="ts">"name"</span>: <span class="tv">card</span>.<span class="tf">select_one</span>(<span class="ts">"h2"</span>).<span class="tv">text</span>.<span class="tf">strip</span>(),</div>
+                <div>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="ts">"price"</span>: <span class="tv">card</span>.<span class="tf">select_one</span>(<span class="ts">".price"</span>).<span class="tv">text</span>.<span class="tf">strip</span>()</div>
+                <div>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;})</div>
+                <div>&nbsp;&nbsp;&nbsp;&nbsp;<span class="tk">return</span> <span class="tv">items</span></div>
+                <div>&nbsp;</div>
+                <div><span class="tc"># Run and save to CSV</span></div>
+                <div><span class="tv">data</span> = <span class="tv">asyncio</span>.<span class="tf">run</span>(<span class="tf">scrape</span>(<span class="ts">"https://example.com"</span>))</div>
+                <div><span class="tv">pd</span>.<span class="tf">DataFrame</span>(<span class="tv">data</span>).<span class="tf">to_csv</span>(<span class="ts">"output.csv"</span>, index=<span class="tk">False</span>) <span class="tcur"></span></div>
+              </div>
+            </div>
+          </div>
+          <div class="gsec">
+            <div class="gs-num">// 03 — Schedule It</div>
+            <h3 class="gs-title">Run automatically on a timer</h3>
+            <div class="term">
+              <div class="term-bar"><div class="td r"></div><div class="td y"></div><div class="td g"></div><span class="term-lbl">schedule_runner.py</span></div>
+              <div class="term-body">
+                <div><span class="tk">import</span> <span class="tv">schedule</span>, <span class="tv">time</span>, <span class="tv">asyncio</span></div>
+                <div>&nbsp;</div>
+                <div><span class="tk">def</span> <span class="tf">job</span>():</div>
+                <div>&nbsp;&nbsp;&nbsp;&nbsp;<span class="tv">data</span> = <span class="tv">asyncio</span>.<span class="tf">run</span>(<span class="tf">scrape</span>(<span class="ts">"https://example.com"</span>))</div>
+                <div>&nbsp;&nbsp;&nbsp;&nbsp;<span class="tf">save_to_db</span>(<span class="tv">data</span>)  <span class="tc"># your storage function</span></div>
+                <div>&nbsp;</div>
+                <div><span class="tv">schedule</span>.<span class="tf">every</span>(<span class="tv">6</span>).<span class="tv">hours</span>.<span class="tf">do</span>(<span class="tv">job</span>)</div>
+                <div><span class="tk">while</span> <span class="tk">True</span>:</div>
+                <div>&nbsp;&nbsp;&nbsp;&nbsp;<span class="tv">schedule</span>.<span class="tf">run_pending</span>()</div>
+                <div>&nbsp;&nbsp;&nbsp;&nbsp;<span class="tv">time</span>.<span class="tf">sleep</span>(<span class="tv">60</span>)</div>
+              </div>
+            </div>
+            <div class="alert al-w"><strong>⚠️ Be respectful</strong>Always check a site's <code>robots.txt</code> before scraping. Add delays between requests (<code>await asyncio.sleep(2)</code>) and set a realistic User-Agent header. Never scrape login-protected data without permission.</div>
+          </div>
+        </div>
+        <div>
+          <div class="sidebar-block">
+            <div class="sb-title">// Anti-bot tips</div>
+            <ul class="checklist" style="margin:0">
+              <li><span class="ci">→</span>Rotate User-Agent strings</li>
+              <li><span class="ci">→</span>Add random delays 1–4 seconds</li>
+              <li><span class="ci">→</span>Use residential proxies if blocked</li>
+              <li><span class="ci">→</span>Handle CAPTCHA with 2captcha API</li>
+              <li><span class="ci">→</span>Respect robots.txt always</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ━━━ GUIDE 4: AI AGENT ━━━ -->
+  <div class="guide-panel reveal" id="guide-agent">
+    <div class="guide-panel-header" onclick="togglePanel(this)">
+      <div class="guide-panel-header-left">
+        <div class="guide-panel-icon">🧠</div>
+        <div class="guide-panel-info">
+          <div class="guide-panel-name">AI Agent with Tools</div>
+          <div class="guide-panel-sub">Python · LangChain · OpenAI · DuckDuckGo Search · Advanced · ~4 hrs</div>
+        </div>
+      </div>
+      <div class="guide-panel-header-right">
+        <span class="panel-badge">Advanced</span>
+        <span class="panel-chevron">▾</span>
+      </div>
+    </div>
+    <div class="guide-panel-body">
+      <div class="guide-panel-body-inner">
+        <div>
+          <div class="gsec">
+            <div class="gs-num">// 01 — What is an Agent?</div>
+            <h3 class="gs-title">Agents vs. basic chatbots</h3>
+            <p class="gp">A regular chatbot just replies to messages. An <strong>agent</strong> decides which actions to take, executes tools (like searching the web, running Python code, reading files), observes the results, and continues reasoning until it reaches a final answer. This is the ReAct pattern — Reason + Act.</p>
+            <div class="hl-box"><h3>🔄 The ReAct Loop</h3><p><strong>Thought:</strong> "I need to find today's BTC price."<br><strong>Action:</strong> Call <code>web_search("bitcoin price today")</code><br><strong>Observation:</strong> "$67,420"<br><strong>Thought:</strong> "I have the answer now."<br><strong>Final Answer:</strong> "Bitcoin is currently at $67,420."</p></div>
+          </div>
+          <div class="gsec">
+            <div class="gs-num">// 02 — Build It</div>
+            <h3 class="gs-title">LangChain agent with web search + code execution</h3>
+            <div class="term">
+              <div class="term-bar"><div class="td r"></div><div class="td y"></div><div class="td g"></div><span class="term-lbl">bash — install</span></div>
+              <div class="term-body">
+                <div><span class="tf">pip install langchain langchain-openai duckduckgo-search</span></div>
+              </div>
+            </div>
+            <div class="term">
+              <div class="term-bar"><div class="td r"></div><div class="td y"></div><div class="td g"></div><span class="term-lbl">agent.py</span></div>
+              <div class="term-body">
+                <div><span class="tk">from</span> <span class="tv">langchain_openai</span> <span class="tk">import</span> <span class="tv">ChatOpenAI</span></div>
+                <div><span class="tk">from</span> <span class="tv">langchain.agents</span> <span class="tk">import</span> <span class="tv">AgentExecutor, create_react_agent</span></div>
+                <div><span class="tk">from</span> <span class="tv">langchain_community.tools</span> <span class="tk">import</span> <span class="tv">DuckDuckGoSearchRun</span></div>
+                <div><span class="tk">from</span> <span class="tv">langchain.tools</span> <span class="tk">import</span> <span class="tv">tool</span></div>
+                <div><span class="tk">from</span> <span class="tv">langchain</span> <span class="tk">import</span> <span class="tv">hub</span></div>
+                <div>&nbsp;</div>
+                <div><span class="tv">llm</span> = <span class="tf">ChatOpenAI</span>(model=<span class="ts">"gpt-4o"</span>, temperature=<span class="tv">0</span>)</div>
+                <div>&nbsp;</div>
+                <div><span class="tc"># Tool 1: web search</span></div>
+                <div><span class="tv">search</span> = <span class="tf">DuckDuckGoSearchRun</span>()</div>
+                <div>&nbsp;</div>
+                <div><span class="tc"># Tool 2: Python calculator</span></div>
+                <div><span class="tk">@</span><span class="tf">tool</span></div>
+                <div><span class="tk">def</span> <span class="tf">calculate</span>(<span class="tv">expression</span>: <span class="tv">str</span>) -> <span class="tv">str</span>:</div>
+                <div>&nbsp;&nbsp;&nbsp;&nbsp;<span class="ts">"""Evaluate a Python math expression."""</span></div>
+                <div>&nbsp;&nbsp;&nbsp;&nbsp;<span class="tk">return</span> <span class="tv">str</span>(<span class="tf">eval</span>(<span class="tv">expression</span>))</div>
+                <div>&nbsp;</div>
+                <div><span class="tv">tools</span> = [<span class="tv">search</span>, <span class="tv">calculate</span>]</div>
+                <div><span class="tv">prompt</span> = <span class="tv">hub</span>.<span class="tf">pull</span>(<span class="ts">"hwchase17/react"</span>)</div>
+                <div><span class="tv">agent</span> = <span class="tf">create_react_agent</span>(<span class="tv">llm</span>, <span class="tv">tools</span>, <span class="tv">prompt</span>)</div>
+                <div><span class="tv">executor</span> = <span class="tf">AgentExecutor</span>(<span class="tv">agent</span>=<span class="tv">agent</span>, <span class="tv">tools</span>=<span class="tv">tools</span>, verbose=<span class="tk">True</span>)</div>
+                <div>&nbsp;</div>
+                <div><span class="tv">result</span> = <span class="tv">executor</span>.<span class="tf">invoke</span>({<span class="ts">"input"</span>: <span class="ts">"What is Bitcoin's price? Calculate 10% of it."</span>})</div>
+                <div><span class="tf">print</span>(<span class="tv">result</span>[<span class="ts">"output"</span>]) <span class="tcur"></span></div>
+              </div>
+            </div>
+            <div class="alert al-s"><strong>✅ It reasons step by step</strong>Set <code>verbose=True</code> to watch the agent's thought process in your terminal. You'll see every Thought → Action → Observation cycle printed live.</div>
+          </div>
+        </div>
+        <div>
+          <div class="sidebar-block">
+            <div class="sb-title">// Tool ideas to add</div>
+            <ul class="checklist" style="margin:0">
+              <li><span class="ci">→</span>Read/write local files</li>
+              <li><span class="ci">→</span>Query a database</li>
+              <li><span class="ci">→</span>Send emails via SMTP</li>
+              <li><span class="ci">→</span>Call any REST API</li>
+              <li><span class="ci">→</span>Image generation via DALL-E</li>
+              <li><span class="ci">→</span>Summarize YouTube videos</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ━━━ GUIDE 5: TWITTER ━━━ -->
+  <div class="guide-panel reveal" id="guide-twitter">
+    <div class="guide-panel-header" onclick="togglePanel(this)">
+      <div class="guide-panel-header-left">
+        <div class="guide-panel-icon">𝕏</div>
+        <div class="guide-panel-info">
+          <div class="guide-panel-name">Twitter/X Automation Bot</div>
+          <div class="guide-panel-sub">Python · Tweepy · cron · API v2 · Beginner · ~1.5 hrs</div>
+        </div>
+      </div>
+      <div class="guide-panel-header-right">
+        <span class="panel-badge">Social</span>
+        <span class="panel-chevron">▾</span>
+      </div>
+    </div>
+    <div class="guide-panel-body">
+      <div class="guide-panel-body-inner">
+        <div>
+          <div class="gsec">
+            <div class="gs-num">// 01 — Setup</div>
+            <h3 class="gs-title">Twitter Developer App + Tweepy</h3>
+            <div class="step-row"><div class="step-circle">1</div><div class="step-info"><h4>Apply for a Developer Account</h4><p>Go to <code>developer.twitter.com</code>. Apply for Basic access (~$100/mo) or use the free tier which allows posting only. Create a Project and App.</p></div></div>
+            <div class="step-row"><div class="step-circle">2</div><div class="step-info"><h4>Get your 4 keys</h4><p>From your App's dashboard, copy: <code>API_KEY</code>, <code>API_SECRET</code>, <code>ACCESS_TOKEN</code>, <code>ACCESS_TOKEN_SECRET</code>. Store all in <code>.env</code>.</p></div></div>
+            <div class="term">
+              <div class="term-bar"><div class="td r"></div><div class="td y"></div><div class="td g"></div><span class="term-lbl">twitter_bot.py</span></div>
+              <div class="term-body">
+                <div><span class="tk">import</span> <span class="tv">tweepy</span>, <span class="tv">os</span>, <span class="tv">schedule</span>, <span class="tv">time</span></div>
+                <div><span class="tk">from</span> <span class="tv">dotenv</span> <span class="tk">import</span> <span class="tv">load_dotenv</span></div>
+                <div><span class="tf">load_dotenv</span>()</div>
+                <div>&nbsp;</div>
+                <div><span class="tv">client</span> = <span class="tv">tweepy</span>.<span class="tf">Client</span>(</div>
+                <div>&nbsp;&nbsp;&nbsp;&nbsp;consumer_key=<span class="tv">os</span>.<span class="tf">getenv</span>(<span class="ts">"API_KEY"</span>),</div>
+                <div>&nbsp;&nbsp;&nbsp;&nbsp;consumer_secret=<span class="tv">os</span>.<span class="tf">getenv</span>(<span class="ts">"API_SECRET"</span>),</div>
+                <div>&nbsp;&nbsp;&nbsp;&nbsp;access_token=<span class="tv">os</span>.<span class="tf">getenv</span>(<span class="ts">"ACCESS_TOKEN"</span>),</div>
+                <div>&nbsp;&nbsp;&nbsp;&nbsp;access_token_secret=<span class="tv">os</span>.<span class="tf">getenv</span>(<span class="ts">"ACCESS_SECRET"</span>)</div>
+                <div>)</div>
+                <div>&nbsp;</div>
+                <div><span class="tc"># Post a tweet</span></div>
+                <div><span class="tk">def</span> <span class="tf">post_daily_tip</span>():</div>
+                <div>&nbsp;&nbsp;&nbsp;&nbsp;<span class="tv">tips</span> = [<span class="ts">"Tip 1: Always handle errors!"</span>, <span class="ts">"Tip 2: Write tests!"</span>]</div>
+                <div>&nbsp;&nbsp;&nbsp;&nbsp;<span class="tv">client</span>.<span class="tf">create_tweet</span>(text=<span class="tv">tips</span>[<span class="tv">0</span>])  <span class="tc"># rotate from list</span></div>
+                <div>&nbsp;</div>
+                <div><span class="tv">schedule</span>.<span class="tf">every</span>().<span class="tv">day</span>.<span class="tf">at</span>(<span class="ts">"09:00"</span>).<span class="tf">do</span>(<span class="tv">post_daily_tip</span>)</div>
+                <div><span class="tk">while</span> <span class="tk">True</span>: <span class="tv">schedule</span>.<span class="tf">run_pending</span>(); <span class="tv">time</span>.<span class="tf">sleep</span>(<span class="tv">30</span>) <span class="tcur"></span></div>
+              </div>
+            </div>
+            <div class="alert al-w"><strong>⚠️ Rate limits</strong>Twitter's free API allows only 500 tweets/month. Basic tier ($100/mo) allows 3,000/month. Never spam — accounts get suspended quickly. Use scheduling to space posts out.</div>
+          </div>
+        </div>
+        <div>
+          <div class="sidebar-block">
+            <div class="sb-title">// Ideas to automate</div>
+            <ul class="checklist" style="margin:0">
+              <li><span class="ci">→</span>Daily quotes or tips</li>
+              <li><span class="ci">→</span>Auto-reply to keyword mentions</li>
+              <li><span class="ci">→</span>Retweet curated content</li>
+              <li><span class="ci">→</span>Weather or stock price updates</li>
+              <li><span class="ci">→</span>Thread posting from a script</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ━━━ GUIDE 6: CHATBOT ━━━ -->
+  <div class="guide-panel reveal" id="guide-chatbot">
+    <div class="guide-panel-header" onclick="togglePanel(this)">
+      <div class="guide-panel-header-left">
+        <div class="guide-panel-icon">💬</div>
+        <div class="guide-panel-info">
+          <div class="guide-panel-name">Embeddable Website Chatbot Widget</div>
+          <div class="guide-panel-sub">FastAPI · OpenAI · Vanilla JS · One-line embed · Intermediate · ~2.5 hrs</div>
+        </div>
+      </div>
+      <div class="guide-panel-header-right">
+        <span class="panel-badge">Web App</span>
+        <span class="panel-chevron">▾</span>
+      </div>
+    </div>
+    <div class="guide-panel-body">
+      <div class="guide-panel-body-inner">
+        <div>
+          <div class="gsec">
+            <div class="gs-num">// 01 — FastAPI Backend</div>
+            <h3 class="gs-title">Build the API server</h3>
+            <div class="term">
+              <div class="term-bar"><div class="td r"></div><div class="td y"></div><div class="td g"></div><span class="term-lbl">main.py — FastAPI server</span></div>
+              <div class="term-body">
+                <div><span class="tk">from</span> <span class="tv">fastapi</span> <span class="tk">import</span> <span class="tv">FastAPI</span></div>
+                <div><span class="tk">from</span> <span class="tv">fastapi.middleware.cors</span> <span class="tk">import</span> <span class="tv">CORSMiddleware</span></div>
+                <div><span class="tk">from</span> <span class="tv">openai</span> <span class="tk">import</span> <span class="tv">AsyncOpenAI</span></div>
+                <div><span class="tk">from</span> <span class="tv">pydantic</span> <span class="tk">import</span> <span class="tv">BaseModel</span></div>
+                <div>&nbsp;</div>
+                <div><span class="tv">app</span> = <span class="tf">FastAPI</span>()</div>
+                <div><span class="tv">app</span>.<span class="tf">add_middleware</span>(<span class="tv">CORSMiddleware</span>, allow_origins=[<span class="ts">"*"</span>], allow_methods=[<span class="ts">"*"</span>])</div>
+                <div><span class="tv">client</span> = <span class="tf">AsyncOpenAI</span>()</div>
+                <div>&nbsp;</div>
+                <div><span class="tk">class</span> <span class="tf">ChatMsg</span>(<span class="tv">BaseModel</span>):</div>
+                <div>&nbsp;&nbsp;&nbsp;&nbsp;<span class="tv">message</span>: <span class="tv">str</span></div>
+                <div>&nbsp;&nbsp;&nbsp;&nbsp;<span class="tv">history</span>: <span class="tv">list</span> = []</div>
+                <div>&nbsp;</div>
+                <div><span class="tk">@</span><span class="tv">app</span>.<span class="tf">post</span>(<span class="ts">"/chat"</span>)</div>
+                <div><span class="tk">async def</span> <span class="tf">chat</span>(<span class="tv">body</span>: <span class="tf">ChatMsg</span>):</div>
+                <div>&nbsp;&nbsp;&nbsp;&nbsp;<span class="tv">msgs</span> = [{<span class="ts">"role"</span>:<span class="ts">"system"</span>,<span class="ts">"content"</span>:<span class="ts">"You are a helpful website assistant."</span>}]</div>
+                <div>&nbsp;&nbsp;&nbsp;&nbsp;<span class="tv">msgs</span> += <span class="tv">body</span>.<span class="tv">history</span></div>
+                <div>&nbsp;&nbsp;&nbsp;&nbsp;<span class="tv">msgs</span>.<span class="tf">append</span>({<span class="ts">"role"</span>:<span class="ts">"user"</span>,<span class="ts">"content"</span>:<span class="tv">body</span>.<span class="tv">message</span>})</div>
+                <div>&nbsp;&nbsp;&nbsp;&nbsp;<span class="tv">res</span> = <span class="tk">await</span> <span class="tv">client</span>.<span class="tv">chat</span>.<span class="tv">completions</span>.<span class="tf">create</span>(model=<span class="ts">"gpt-4o-mini"</span>, messages=<span class="tv">msgs</span>)</div>
+                <div>&nbsp;&nbsp;&nbsp;&nbsp;<span class="tk">return</span> {<span class="ts">"reply"</span>: <span class="tv">res</span>.<span class="tv">choices</span>[<span class="tv">0</span>].<span class="tv">message</span>.<span class="tv">content</span>}</div>
+              </div>
+            </div>
+          </div>
+          <div class="gsec">
+            <div class="gs-num">// 02 — Embed Widget</div>
+            <h3 class="gs-title">One-line embed for any website</h3>
+            <div class="term">
+              <div class="term-bar"><div class="td r"></div><div class="td y"></div><div class="td g"></div><span class="term-lbl">widget.js — self-contained embed</span></div>
+              <div class="term-body">
+                <div><span class="tc">/* Drop this one line anywhere in your site's HTML: */</span></div>
+                <div><span class="ts">&lt;script src="https://your-api.com/widget.js"&gt;&lt;/script&gt;</span></div>
+                <div>&nbsp;</div>
+                <div><span class="tc">/* widget.js creates a floating chat button + panel */</span></div>
+                <div>(<span class="tk">function</span>() {</div>
+                <div>&nbsp;&nbsp;<span class="tk">const</span> <span class="tv">btn</span> = <span class="tv">document</span>.<span class="tf">createElement</span>(<span class="ts">'button'</span>);</div>
+                <div>&nbsp;&nbsp;<span class="tv">btn</span>.<span class="tv">innerHTML</span> = <span class="ts">'💬'</span>;</div>
+                <div>&nbsp;&nbsp;<span class="tv">btn</span>.<span class="tv">style</span>.<span class="tv">cssText</span> = <span class="ts">'position:fixed;bottom:24px;right:24px;width:56px;height:56px;border-radius:50%;background:#4ade80;border:none;font-size:1.4rem;cursor:pointer;z-index:9999;box-shadow:0 4px 20px rgba(0,0,0,0.2)'</span>;</div>
+                <div>&nbsp;&nbsp;<span class="tv">document</span>.<span class="tv">body</span>.<span class="tf">appendChild</span>(<span class="tv">btn</span>);</div>
+                <div>&nbsp;&nbsp;<span class="tc">// ... chat panel and API calls follow</span></div>
+                <div>})()</div>
+              </div>
+            </div>
+            <div class="alert al-s"><strong>✅ Works on any site</strong>The widget is self-contained — it creates its own DOM elements, styles, and handles all API communication. No framework needed on the host site.</div>
+          </div>
+        </div>
+        <div>
+          <div class="sidebar-block">
+            <div class="sb-title">// Customization ideas</div>
+            <ul class="checklist" style="margin:0">
+              <li><span class="ci">→</span>Custom brand colors + logo</li>
+              <li><span class="ci">→</span>Pre-loaded FAQ answers</li>
+              <li><span class="ci">→</span>Lead capture form integration</li>
+              <li><span class="ci">→</span>Handoff to human agent</li>
+              <li><span class="ci">→</span>Analytics on conversations</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════ COMPARISON TABLE ═══════════ -->
+<section class="section" id="tools">
+  <div class="section-label">Compare</div>
+  <h2 class="section-h">Which bot is right for you?</h2>
+  <p class="section-sub">A side-by-side look at all six bot types so you can pick the best fit for your project.</p>
+
+  <table class="tools-table reveal">
+    <thead>
+      <tr>
+        <th>Bot Type</th>
+        <th>Platform</th>
+        <th>Difficulty</th>
+        <th>AI Support</th>
+        <th>Deployment</th>
+        <th>Free to Run?</th>
+        <th>Best For</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><strong>🤖 Discord Bot</strong></td>
+        <td>Discord</td>
+        <td><span class="diff-badge diff-easy">Beginner</span></td>
+        <td class="t-yes">Optional</td>
+        <td>Railway / Heroku</td>
+        <td class="t-yes">✓ Yes</td>
+        <td>Communities, servers, gaming</td>
+      </tr>
+      <tr>
+        <td><strong>✈️ Telegram Bot</strong></td>
+        <td>Telegram</td>
+        <td><span class="diff-badge diff-med">Intermediate</span></td>
+        <td class="t-yes">Built-in (GPT)</td>
+        <td>Railway / Render</td>
+        <td class="t-mid">~ API costs</td>
+        <td>AI chatbots, global reach</td>
+      </tr>
+      <tr>
+        <td><strong>🕷️ Web Scraper</strong></td>
+        <td>Any website</td>
+        <td><span class="diff-badge diff-easy">Beginner</span></td>
+        <td class="t-no">Not needed</td>
+        <td>Cron / VPS</td>
+        <td class="t-yes">✓ Yes</td>
+        <td>Data collection, monitoring</td>
+      </tr>
+      <tr>
+        <td><strong>🧠 AI Agent</strong></td>
+        <td>Terminal / API</td>
+        <td><span class="diff-badge diff-hard">Advanced</span></td>
+        <td class="t-yes">Core feature</td>
+        <td>VPS / Lambda</td>
+        <td class="t-mid">~ API costs</td>
+        <td>Autonomous research & tasks</td>
+      </tr>
+      <tr>
+        <td><strong>𝕏 Twitter Bot</strong></td>
+        <td>Twitter/X</td>
+        <td><span class="diff-badge diff-easy">Beginner</span></td>
+        <td class="t-yes">Optional</td>
+        <td>Cron / Railway</td>
+        <td class="t-mid">~ API costs ($100+)</td>
+        <td>Social growth, content scheduling</td>
+      </tr>
+      <tr>
+        <td><strong>💬 Chat Widget</strong></td>
+        <td>Any website</td>
+        <td><span class="diff-badge diff-med">Intermediate</span></td>
+        <td class="t-yes">Core feature</td>
+        <td>Railway / Vercel</td>
+        <td class="t-mid">~ API costs</td>
+        <td>Customer support, lead capture</td>
+      </tr>
+    </tbody>
+  </table>
+</section>
+
+<!-- ═══════════ FOOTER ═══════════ -->
+<footer>
+  <div class="footer-inner">
+    <div class="footer-logo">Bot<span>Craft</span></div>
+    <div class="footer-links">
+      <a href="#home">Home</a>
+      <a href="#bots">All Bots</a>
+      <a href="#guides">Guides</a>
+      <a href="#tools">Compare</a>
+    </div>
+    <div class="footer-copy">© 2025 BotCraft — Free, open, everything in one place.</div>
+  </div>
+</footer>
+
+<!-- ═══════════ SCRIPTS ═══════════ -->
+<script>
+/* ── Custom cursor ── */
+const cur = document.getElementById('cursor');
+const ring = document.getElementById('cursorRing');
+let mx=0,my=0,rx=0,ry=0;
+document.addEventListener('mousemove', e => {
+  mx = e.clientX; my = e.clientY;
+  cur.style.left = (mx-4.5)+'px';
+  cur.style.top  = (my-4.5)+'px';
+});
+(function animRing(){
+  rx += (mx - rx - 17) * 0.13;
+  ry += (my - ry - 17) * 0.13;
+  ring.style.left = rx+'px';
+  ring.style.top  = ry+'px';
+  requestAnimationFrame(animRing);
+})();
+document.querySelectorAll('a,button,.bot-card,.guide-panel-header').forEach(el => {
+  el.addEventListener('mouseenter', () => { cur.style.transform='scale(2)'; ring.style.width='56px'; ring.style.height='56px'; });
+  el.addEventListener('mouseleave', () => { cur.style.transform='scale(1)'; ring.style.width='34px'; ring.style.height='34px'; });
+});
+
+/* ── Scroll-reveal ── */
+const revObs = new IntersectionObserver((entries) => {
+  entries.forEach((e, i) => {
+    if (e.isIntersecting) setTimeout(() => e.target.classList.add('visible'), i * 70);
+  });
+}, { threshold: 0.08 });
+document.querySelectorAll('.reveal').forEach(el => revObs.observe(el));
+
+/* ── Nav active pill ── */
+function scrollTo(id) {
+  document.querySelector(id)?.scrollIntoView({ behavior: 'smooth' });
+}
+const sections = ['#home','#bots','#process','#guides','#tools'];
+const pills = document.querySelectorAll('.nav-pill');
+window.addEventListener('scroll', () => {
+  const y = window.scrollY + 100;
+  sections.forEach((id, i) => {
+    const el = document.querySelector(id);
+    if (el && el.offsetTop <= y) {
+      pills.forEach(p => p.classList.remove('active'));
+      if (pills[i]) pills[i].classList.add('active');
+    }
+  });
+});
+
+/* ── Accordion panels ── */
+function togglePanel(header) {
+  const panel = header.closest('.guide-panel');
+  const isOpen = panel.classList.contains('open');
+  // Close all
+  document.querySelectorAll('.guide-panel.open').forEach(p => p.classList.remove('open'));
+  // Open clicked if it wasn't open
+  if (!isOpen) {
+    panel.classList.add('open');
+    setTimeout(() => panel.scrollIntoView({ behavior: 'smooth', block: 'start' }), 80);
+  }
+}
+</script>
+</body>
+</html>
